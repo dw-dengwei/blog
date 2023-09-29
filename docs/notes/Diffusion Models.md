@@ -8,7 +8,8 @@ TODO
 # 原理篇  
 ## 基于score的生成模型  
 基于score的生成模型和扩散模型非常相似，使用了score matching和Langevin dynamics技术进行生成。其中，  
-1. score matching是估计目标分布的概率密度的梯度（即score，分数），记$p(x)$是[[Diffusion Models#CDM|CDM]]概率密度函数，则这个分布的score被定义为$\nabla_x\log p(x)$，score matching则是训练一个网络$s_\theta$去近似score：$$\mathcal{E}_{p(x)}\left[ \|\nabla_x\log p(x)-s_\theta(x)\|^2_2 \right]=\int p(x)\|\nabla_x\log p(x)-s_\theta(x)\|^2_2 dx$$  
+1. score matching是估计目标分布的概率密度的梯度（即score，分数），记$p(x)$是数据分布的概率密度函数，则这个分布的score被定义为$\nabla_x\log p(x)$，score matching则是训练一个网络$s_\theta$去近似score：  
+$$\mathcal{E}_{p(x)}\left[ \|\nabla_x\log p(x)-s_\theta(x)\|^2_2 \right]=\int p(x)\|\nabla_x\log p(x)-s_\theta(x)\|^2_2 dx$$  
 3. Langevin dynamics是使用score采样生成数据，采样方式如下：  
 $$  
 x_t=x_{t-1}+\frac{\delta}{2}\nabla_x\log p(x_{t-1})+\sqrt{\delta}\epsilon, \text{    where } \epsilon\sim\mathcal{N}(0, I)  
