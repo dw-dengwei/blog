@@ -93,9 +93,6 @@ q(x_{t-1}|x_t,x_0)
 +\sqrt{1-\bar{\alpha}_{t-1}}\epsilon_\theta(x_t,t)\\
 \end{align}
 $$
-
-
-
 # 应用篇
 ## SR3
 超分，训练数据是LR和SR配对的图片，以LR图片作为condition，生成SR图片
