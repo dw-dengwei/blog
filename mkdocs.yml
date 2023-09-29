@@ -55,8 +55,9 @@ markdown_extensions:
   - tables
   - mdx_breakless_lists
   - def_list
-  - pymdownx.arithmatex:
-      generic: true
+  # - pymdownx.arithmatex:
+  #     generic: true
+  - mdx_math
   - pymdownx.details
   - pymdownx.magiclink
   - pymdownx.critic
@@ -118,8 +119,9 @@ hooks:
   - overrides/hooks/on_files.py
 extra_javascript:
   # - https://cdn.jsdelivr.net/gh/ObsidianPublisher/assets@main/dist/javascript.js
-  - javascripts/mathjax.js
+  # - javascripts/mathjax.js
   - javascripts/default.js
+  - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML
   - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
   # - javascripts/katex.js 
