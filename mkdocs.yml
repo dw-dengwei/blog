@@ -18,11 +18,23 @@ markdown_extensions:
   # - sane_lists
   # - meta
   # - smarty
-  # - tables
+  - tables
   # - mdx_breakless_lists
   # - def_list
   - mdx_math:
       enable_dollar_delimiter: true
+  - pymdownx.betterem
+  - pymdownx.caret
+  - pymdownx.mark
+  - pymdownx.tilde
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences 
+
+  # - pymdownx.critic
   # - pymdownx.details
   # - pymdownx.magiclink
   # - pymdownx.critic
@@ -35,9 +47,6 @@ markdown_extensions:
   #     anchor_linenums: true
   # - pymdownx.tasklist:
   #      custom_checkbox: true
-  # - pymdownx.emoji:
-  #     emoji_index: !!python/name:materialx.emoji.twemoji
-  #     emoji_generator: !!python/name:materialx.emoji.to_svg
   # - admonition
   # - toc:
   #     permalink: true
