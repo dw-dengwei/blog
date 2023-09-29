@@ -48,7 +48,7 @@ markdown_extensions:
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
 plugins:
-  # - search
+# - search
 # - meta-descriptions
 #   - git-revision-date-localized:
 #       type: date
@@ -98,17 +98,17 @@ extra_css:
     - assets/css/custom_attributes.css
     - assets/css/customization.css
     # - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/katex.min.css
-extra:
+# extra:
   # SEO: assets/meta/SEO.png
-  comments: false #disable comments globally
-  generate_graph: true #generate the graph of the site
-  attachments: 'assets/img' #path to the folder where the attachments are stored
-  no-auto-h1: false #disable the automatic generation of h1 if no h1 is found
-  blog_list:
-    pagination: true #enable pagination
-    pagination_message: true #display the message "Showing x posts out of y"
-    pagination_translation: 'posts in' #message to display before the number of posts ; Add your own translation!
-    no_page_found: "No pages found!" #message to display when no pages are found ; Add your own translation!
-  hooks:
-    strip_comments: true
-    fix_heading: true
+  # comments: false #disable comments globally
+  # generate_graph: true #generate the graph of the site
+  # attachments: 'assets/img' #path to the folder where the attachments are stored
+  # no-auto-h1: false #disable the automatic generation of h1 if no h1 is found
+  # blog_list:
+  #   pagination: true #enable pagination
+  #   pagination_message: true #display the message "Showing x posts out of y"
+  #   pagination_translation: 'posts in' #message to display before the number of posts ; Add your own translation!
+  #   no_page_found: "No pages found!" #message to display when no pages are found ; Add your own translation!
+  # hooks:
+  #   strip_comments: true
+  #   fix_heading: true
