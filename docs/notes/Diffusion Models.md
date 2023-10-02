@@ -120,12 +120,56 @@ $$
 \mathcal{L}_t^{\mathrm{simple}}&=\mathbb{E}_{t\sim[1,T],\mathbf x_0,\boldsymbol\epsilon_t}\left[\|\boldsymbol\epsilon_t-\boldsymbol\epsilon_\theta(\sqrt{\bar{\alpha}_t}\mathbf x_0+\sqrt{1-\bar{\alpha}_t}\boldsymbol\epsilon_t,t)\|^2_2\right]  
 \end{align}  
 $$  
-### 总结  
+### 1.1.4 总结  
 综上，DDPM的训练和采样/推理过程如下图所示：  
 ![Pasted image 20231002142935.png](../assets/img/Pasted%20image%2020231002142935.png)  
 ## 1.2 基于score的生成模型  
+### 1.2.1 引言  
+score-based生成模型是一种新的生成模型范式，在score-based之前，主要存在两种类型的生成模型：  
+1. **基于似然的生成模型**：基于最大似然估计（MLE），使得从真实数据分布中采样出的数据能够在所建模的数据分布中概率最大化，即$\max_\theta \mathbb{E}_{x\sim p_\mathrm{data}(x)}\left[\log p(x;\theta)\right]$。这类模型通过最大化似然函数，直接学习数据集的分布，主要方法有VAE、流模型、能量模型  
+2. **隐式生成模型**：非直接学习数据集的分布，主要方法有GAN  
+它们分别具有以下限制：  
+1. **对于基于似然的生成模型**：对神经网络的结构要求高  
+2. **对于隐式生成模型**：训练不稳定、容易导致模式坍塌  
+### 1.2.2 先验知识  
+score-based生成模型就能很好地避免这些限制，在介绍score-based生成模型之前，需要明确几个概念：  
+1. **能量函数**  
+对数据的概率分布可以使用概率密度函数（PDF）进行描述，也可以使用能量函数进行描述：  
+$$  
+p(x)=\frac{e^{-E(x)}}{Z}  
+$$  
+其中$p(x)$是PDF，$E(x)$是能量函数，$Z=\int e^{-E(x)}\mathrm{d}x$是归一化因子。以高斯分布为例，可以使用以下能量函数进行描述：  
+$$  
+\begin{align}  
+E(x;\mu,\sigma^2)&=\frac{1}{2\sigma^2}(x-\mu)^2\\  
+p(x)&=\frac{e^{-E(x)}}{\int e^{-E(x)}\mathrm dx}=\frac{e^{\frac{1}{2\sigma^2}(x-\mu)^2}}{\sqrt{2\pi\sigma^2}}  
+\end{align}  
+$$  
+2. **能量模型**  
+能量模型是基于能量函数的生成模型：  
+$$  
+p_\theta(x)=\frac{\exp(-E_\theta(x))}{Z_\theta}  
+$$  
+基于能量函数对数据分布进行建模的时候，**如何计算能量模型的归一化函数$Z_\theta$是一个较难的问题**。传统的基于似然的生成模型（如自回归模型、流模型、VAE）都有自己的解决方式，但是都对能量模型做了太多的约束，各自都有其限制。  
+3. **蒙特卡罗采样方法：拒绝-接受法**  
+目的：希望从一个复杂分布$p(x)$采样$N$个样本  
+方法：使用一个简单分布$q(x)$为媒介（例如：高斯分布），这个分布必须满足它的$c>0$倍大于等于$p(x)$。首先从简单分布$q(x)$中采样得到$x^*$，然后以$\frac{p(x^*)}{cq(x^*)}$的概率保留这个样本，直到得到$N$个样本结束。  
+![Pasted image 20231002164638.png](../assets/img/Pasted%20image%2020231002164638.png)  
+  
+5. **MCMC**  
+**MCMC方法可以从复杂分布中进行采样**  
+**符号定义**：$\pi_i\triangleq\pi(i)=\lim_{t\to +\infty}P(X_t=i)$，即马尔科夫链达到平稳分布的时候，处于第$i$个状态的概率。  
+**满足遍历定理的马尔可夫链**：从任意起始点出发，最终都会收敛到同一个平稳分布，即殊途同归。  
+如果定义一个满足遍历定理的马尔可夫链，使得它的平稳分布等于目标分布$p(x)$，那么当经过足够长的游走时间$m$后，该链收敛，在之后的时间内每游走一次，就得到了服从目标分布的一个样本。该算法就被称为MCMC方法。  
+现在最大的问题就是：**如何构造这么一个马尔可夫链，使得它的平稳分布等于目标分布？**  
+TODO  
+7. **基于MCMC的MLE方法**  
+  
+### 1.2.3 score-based模型的解决方案  
+  
+  
 基于score的生成模型和扩散模型非常相似，使用了score matching和Langevin dynamics技术进行生成。其中，  
-1. score matching是估计目标分布的概率密度的梯度（即score，分数），记$p(x)$是数据分布的概率密度函数，则这个分布的score被定义为$\nabla_x\log p(x)$，score matching则是训练一个网络$s_\theta$去近似score：  
+1. score  matching是估计目标分布的概率密度的梯度 （即score，分数），记$p(x)$是数据分布的概率密度函数，则这个分布的score被定义为$\nabla_x\log p(x)$，score matching则是训练一个网络$s_\theta$去近似score：  
 $$\mathcal{E}_{p(x)}\left[ \|\nabla_x\log p(x)-s_\theta(x)\|^2_2 \right]=\int p(x)\|\nabla_x\log p(x)-s_\theta(x)\|^2_2 dx$$  
 3. Langevin dynamics是使用score采样生成数据，采样方式如下：  
 $$  
@@ -231,6 +275,10 @@ $\phi_N(\cdot)$是一个低通滤波器（下采样之后再插值回来）。�
 基于扩散模型的图像编辑，使用到的技术有DDIM Inversion，CLIP  
 TODO  
 # 3 参考  
-1. [https://www.bilibili.com/video/BV13P411J7dm](https://www.bilibili.com/video/BV13P411J7dm)  
+1. [从零开始了解Diffusion Models](https://www.bilibili.com/video/BV13P411J7dm)  
 2. [https://ayandas.me/blog-tut/2021/12/04/diffusion-prob-models.html](https://ayandas.me/blog-tut/2021/12/04/diffusion-prob-models.html)  
-3. [https://lilianweng.github.io/posts/2021-07-11-diffusion-models/](https://lilianweng.github.io/posts/2021-07-11-diffusion-models/)
+3. [What are Diffusion Models](https://lilianweng.github.io/posts/2021-07-11-diffusion-models/)  
+4. [An introduction to Diffusion Probabilistic Models](https://yang-song.net/blog/2021/score/)  
+5. [能量模型能做什么，和普通的神经网络模型有什么区别，为什么要用能量模型呢？](https://www.zhihu.com/question/499485994/answer/2552791458)  
+6. [扩散模型与能量模型，Score-Matching和SDE，ODE的关系](https://zhuanlan.zhihu.com/p/576779879)  
+7. [你一定从未看过如此通俗易懂的马尔科夫链蒙特卡罗方法(MCMC)解读(上)](https://zhuanlan.zhihu.com/p/250146007)
