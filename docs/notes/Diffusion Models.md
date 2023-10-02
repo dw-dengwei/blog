@@ -55,7 +55,7 @@ $$
 q(\mathbf{x}_{t-1}|\mathbf{x}_t)&=q(\mathbf{x}_{t-1}|\mathbf{x}_t,\mathbf{x}_0)\\  
               &=\frac{q(\mathbf{x}_t|\mathbf{x}_{t-1},\mathbf{x}_0)q(\mathbf{x}_{t-1}|\mathbf{x}_0)}{q(\mathbf{x}_t|\mathbf{x}_0)}\\  
               &=\frac{q(\mathbf{x}_t|\mathbf{x}_{t-1})q(\mathbf{x}_{t-1}|\mathbf{x}_0)}{q(\mathbf{x}_t|\mathbf{x}_0)}\\  
-              &=\mathcal{N}(\mathbf{x}_{t-1};\mu(\mathbf{x}_t;\theta),\sigma_t^2I)  
+              &=\mathcal{N}(\mathbf{x}_{t-1};\mu(\mathbf{x}_t;\theta),\sigma_t^2\mathbf I)  
 \end{align}  
 $$  
 其中，$\mu(x_t;\theta)$是高斯分布的均值，$\sigma_t$可以用超参数表示：  
@@ -80,14 +80,49 @@ $$
 &=\frac{1}{\sqrt{\alpha_t}}\left(x_t-\frac{1-\alpha_t}{\sqrt{1-\bar\alpha_t}}\boldsymbol\epsilon_t\right)  
 \end{align}  
 $$  
-综上，逆向扩散过程：  
+而在推理的时候，$\boldsymbol\epsilon_t$是未知的，所以使用神经网络进行预测。综上，逆向扩散过程：  
 $$  
 \begin{align}  
 q(\mathbf{x}_{t-1}|\mathbf{x}_t)&=\mathcal{N}(\mathbf{x}_{t-1};\mu(\mathbf{x}_t;\theta),\sigma_t^2\mathbf I)\\  
-&=\mathcal{N}\left(\mathbf x_{t-1};\frac{1}{\sqrt{\alpha_t}}\left(x_t-\frac{1-\alpha_t}{\sqrt{1-\bar\alpha_t}}\boldsymbol\epsilon_t\right),\left(\frac{1-\bar{\alpha}_{t-1}}{1-\bar{\alpha}_t}\cdot\beta_t\right)^2\mathbf I\right)\\  
-\mathbf x_{t-1}&=\frac{1}{\sqrt{\alpha_t}}\left(x_t-\frac{1-\alpha_t}{\sqrt{1-\bar\alpha_t}}\boldsymbol\epsilon_t\right)+\frac{1-\bar{\alpha}_{t-1}}{1-\bar{\alpha}_t}\beta_t\cdot\boldsymbol\epsilon\quad\boldsymbol\epsilon\sim\mathcal N(\mathbf 0, \mathbf I)  
+&=\mathcal{N}\left(\mathbf x_{t-1};\frac{1}{\sqrt{\alpha_t}}\left(x_t-\frac{1-\alpha_t}{\sqrt{1-\bar\alpha_t}}\boldsymbol\epsilon_\theta(\mathbf x_t, t)\right),\left(\frac{1-\bar{\alpha}_{t-1}}{1-\bar{\alpha}_t}\cdot\beta_t\right)^2\mathbf I\right)\\  
+\mathbf x_{t-1}&=\frac{1}{\sqrt{\alpha_t}}\left(x_t-\frac{1-\alpha_t}{\sqrt{1-\bar\alpha_t}}\boldsymbol\epsilon_\theta(\mathbf x_t, t)\right)+\frac{1-\bar{\alpha}_{t-1}}{1-\bar{\alpha}_t}\beta_t\cdot\boldsymbol\epsilon\quad\boldsymbol\epsilon\sim\mathcal N(\mathbf 0, \mathbf I)  
 \end{align}  
 $$  
+### 1.1.3 模型训练  
+DDPM的训练目标是最小化训练数据的负对数似然：  
+$$  
+\begin{align}  
+-\log p_\theta(\mathbf x_0) &\le -\log p_\theta(\mathbf x_0) + \mathrm{KL}\left(q(\mathbf x_{1:T}|\mathbf x_0)\|p_\theta(\mathbf x_{1:T}|\mathbf x_0)\right) &\quad ;\mathrm{KL}(\cdot\|\cdot)\ge 0\\  
+&=-\log p_\theta(\mathbf x_0)+\mathbb{E}_{\mathbf x_{1:T}\sim q(\mathbf x_{1:T}|\mathbf x_0)}\left[\log\frac{q(\mathbf x_{1:T}|\mathbf x_0)}{p_\theta(\mathbf x_{0:T})/p_\theta(\mathbf x_0)}\right]&\quad;p_\theta(\mathbf x_{1:T}|\mathbf x_0)=\frac{p_\theta(\mathbf x_{0:T})}{p_\theta(\mathbf x_0)}\\  
+&=-\log p_\theta(\mathbf x_0)+\mathbb{E}_{\mathbf x_{1:T}\sim q(\mathbf x_{1:T}|\mathbf x_0)}\left[\log\frac{q(\mathbf x_{1:T}|\mathbf x_0)}{p_\theta(\mathbf x_{0:T})}+\log p_\theta(\mathbf x_0)\right]\\  
+&=\mathbb{E}_{\mathbf x_{1:T}\sim q(\mathbf x_{1:T}|\mathbf x_0)}\left[\log\frac{q(\mathbf x_{1:T}|\mathbf x_0)}{p_\theta(\mathbf x_{0:T})}\right]\\  
+\end{align}  
+$$  
+其中$p_\theta(\mathbf x_{1:T}|\mathbf x_0)$是使用网络估计分布$q$（变分推断），定义$\mathcal{L}_{\mathrm{VLB}}\triangleq\mathbb{E}_q(\mathbf x_{0:T})\left[\log\frac{q(\mathbf x_{1:T}|\mathbf x_0)}{p_\theta(\mathbf x_{0:T})}\right]\ge-\mathbb{E}_{q(\mathbf x_0)}\log p_\theta(\mathbf x_0)$，那么VLB是训练数据的负对数似然的上节，最小化VLB就是最小化负对数似然。继续对VLB拆分：  
+$$  
+\begin{align}  
+\mathcal{L}_{\mathrm{VLB}}&=\mathbb{E}_{q(\mathbf x_{0:T})}\left[\log\frac{q(\mathbf x_{1:T}|\mathbf x_0)}{p_\theta(\mathbf x_{0:T})}\right]\\  
+&=\mathbb{E}_q\left[\log\frac{\prod_{t=1}^{T}q(\mathbf x_t|\mathbf x_{t-1})}{p_\theta(\mathbf x_T)\prod_{t=1}^{T}p_\theta(\mathbf x_{t-1}|\mathbf x_t)}\right]\\  
+&=\mathbb{E}_q\left[-\log p_\theta(\mathbf x_T)+\sum\limits^{T}_{t=1}\log\frac{q(\mathbf x_t|\mathbf x_{t-1})}{p_\theta(\mathbf x_{t-1}|\mathbf x_t)}\right]\\  
+&=\mathbb{E}_q\left[-\log p_\theta(\mathbf x_T)+\sum\limits^{T}_{t=2}\log\frac{q(\mathbf x_t|\mathbf x_{t-1})}{p_\theta(\mathbf x_{t-1}|\mathbf x_t)}+\log\frac{q(\mathbf x_1|\mathbf x_0)}{p_\theta(\mathbf x_0|\mathbf x_1)}\right]\\  
+&=\mathbb{E}_q\left[-\log p_\theta(\mathbf x_T)+\sum\limits^{T}_{t=2}\log\frac{q(\mathbf x_t|\mathbf x_{t-1}, \mathbf x_0)}{p_\theta(\mathbf x_{t-1}|\mathbf x_t)}+\log\frac{q(\mathbf x_1|\mathbf x_0)}{p_\theta(\mathbf x_0|\mathbf x_1)}\right] &\quad ;q(\mathbf x_t|\mathbf x_{t-1})=q(\mathbf x_t|\mathbf x_{t-1}, \mathbf x_0)\\  
+&=\mathbb{E}_q\left[-\log p_\theta(\mathbf x_T)+\sum\limits^{T}_{t=2}\log\left(\frac{q(\mathbf x_{t-1}|\mathbf x_{t}, \mathbf x_0)}{p_\theta(\mathbf x_{t-1}|\mathbf x_t)} \frac{q(\mathbf x_t|\mathbf x_0)}{q(\mathbf x_{t-1}|\mathbf x_0)}\right)+\log\frac{q(\mathbf x_1|\mathbf x_0)}{p_\theta(\mathbf x_0|\mathbf x_1)}\right] &\quad ;\text{Bayes}\\  
+	&=\mathbb{E}_q\left[\log\frac{q(\mathbf x_T|\mathbf x_0)}{p_\theta(\mathbf x_T)}+\sum_{t=2}^{T}\log\frac{q(\mathbf x_{t-1}|\mathbf x_t, \mathbf x_0)}{p_\theta(\mathbf x_{t-1}|\mathbf x_t)}-\log p_\theta(\mathbf x_0|\mathbf x_1)\right]\\  
+&=\mathbb{E}_q\left[\underbrace{\mathrm{KL}(q(\mathbf x_T|\mathbf x_0) \| p_\theta(\mathbf x_T))}_{\mathcal{L}_T} + \sum_{t=2}^{T}\underbrace{\mathrm{KL}(q(\mathbf x_{t-1}|\mathbf x_t, \mathbf x_0) \| p_\theta(\mathbf x_{t-1}|\mathbf x_t))}_{\mathcal{L}_{t-1}}-\underbrace{\log p_\theta(\mathbf x_0|\mathbf x_1)}_{\mathcal{L}_0}\right]\\  
+&=\mathbb{E}_q\left[\mathcal{L}_T+\sum_{t=2}^{T}\mathcal{L}_{t-1}-\mathcal{L}_0\right]  
+\end{align}  
+$$  
+1. 由于$\mathbf x_T$是纯噪声，所以$\mathcal{L}_T$是常数  
+2. 对于$\mathcal{L}_0$，DDPM专门设计了特殊的$p_\theta(\mathbf x_0|\mathbf x_1)$  
+3. 对于$\mathcal{L}_t\triangleq\mathrm{KL}(q(\mathbf x_t|\mathbf x_{t+1}, \mathbf x_0) \| p_\theta(\mathbf x_t | \mathbf x_{t+1})) \quad 1\le t \le T-1$，是两个正态分布的KL散度，有解析解。在DDPM中，使用了简化之后的损失函数：  
+$$  
+\begin{align}  
+\mathcal{L}_t^{\mathrm{simple}}&=\mathbb{E}_{t\sim[1,T],\mathbf x_0,\boldsymbol\epsilon_t}\left[\|\boldsymbol\epsilon_t-\boldsymbol\epsilon_\theta(\sqrt{\bar{\alpha}_t}\mathbf x_0+\sqrt{1-\bar{\alpha}_t}\boldsymbol\epsilon_t,t)\|^2_2\right]  
+\end{align}  
+$$  
+### 总结  
+综上，DDPM的训练和采样/推理过程如下图所示：  
+![Pasted image 20231002142935.png](../assets/img/Pasted%20image%2020231002142935.png)  
 ## 1.2 基于score的生成模型  
 基于score的生成模型和扩散模型非常相似，使用了score matching和Langevin dynamics技术进行生成。其中，  
 1. score matching是估计目标分布的概率密度的梯度（即score，分数），记$p(x)$是数据分布的概率密度函数，则这个分布的score被定义为$\nabla_x\log p(x)$，score matching则是训练一个网络$s_\theta$去近似score：  
