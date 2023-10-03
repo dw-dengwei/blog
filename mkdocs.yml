@@ -8,7 +8,7 @@ nav:
   - 'Diffusion Models': 'notes/Diffusion Models.md'
 
 theme:
-    name: 'gitbook'
+    name: 'material'
 
 # Extensions
 markdown_extensions:
